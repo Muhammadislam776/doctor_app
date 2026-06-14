@@ -46,7 +46,17 @@ const appointmentCancel = async (req, res) => {
     try {
 
         const { appointmentId } = req.body
+        const appointmentData = await appointmentModel.findById(appointmentId)
         await appointmentModel.findByIdAndUpdate(appointmentId, { cancelled: true })
+
+        // Release doctor slot
+        const { docId, slotDate, slotTime } = appointmentData
+        const doctorData = await doctorModel.findById(docId)
+        let slots_booked = doctorData.slots_booked
+        if (slots_booked[slotDate]) {
+            slots_booked[slotDate] = slots_booked[slotDate].filter(e => e !== slotTime)
+            await doctorModel.findByIdAndUpdate(docId, { slots_booked })
+        }
 
         res.json({ success: true, message: 'Appointment Cancelled' })
 
@@ -142,15 +152,72 @@ const adminDashboard = async (req, res) => {
         const users = await userModel.find({})
         const appointments = await appointmentModel.find({})
 
+        // Calculate revenue from paid appointments
+        let revenue = 0
+        let completedCount = 0
+        let cancelledCount = 0
+        let pendingCount = 0
+
+        appointments.forEach((item) => {
+            if (item.cancelled) {
+                cancelledCount++
+            } else if (item.isCompleted) {
+                completedCount++
+                if (item.payment) revenue += item.amount
+            } else {
+                pendingCount++
+                if (item.payment) revenue += item.amount
+            }
+        })
+
         const dashData = {
             doctors: doctors.length,
             appointments: appointments.length,
             patients: users.length,
+            revenue,
+            completedCount,
+            cancelledCount,
+            pendingCount,
             latestAppointments: appointments.reverse()
         }
 
         res.json({ success: true, dashData })
 
+    } catch (error) {
+        console.log(error)
+        res.json({ success: false, message: error.message })
+    }
+}
+
+// API to get all patients list for admin panel
+const allPatients = async (req, res) => {
+    try {
+        const users = await userModel.find({}).select('-password')
+        const appointments = await appointmentModel.find({})
+        
+        // Add appointment count for each user
+        const patientsWithStats = users.map(user => {
+            const userAppointments = appointments.filter(apt => apt.userId === user._id.toString())
+            return {
+                ...user._doc,
+                totalAppointments: userAppointments.length,
+                completedAppointments: userAppointments.filter(apt => apt.isCompleted).length
+            }
+        })
+        
+        res.json({ success: true, patients: patientsWithStats })
+    } catch (error) {
+        console.log(error)
+        res.json({ success: false, message: error.message })
+    }
+}
+
+// API to delete doctor
+const deleteDoctor = async (req, res) => {
+    try {
+        const { docId } = req.body
+        await doctorModel.findByIdAndDelete(docId)
+        res.json({ success: true, message: 'Doctor Deleted' })
     } catch (error) {
         console.log(error)
         res.json({ success: false, message: error.message })
@@ -163,5 +230,7 @@ export {
     appointmentCancel,
     addDoctor,
     allDoctors,
-    adminDashboard
+    adminDashboard,
+    allPatients,
+    deleteDoctor
 }

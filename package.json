@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "ADMIN_EMAIL":"admin@example.com",
+  "ADMIN_PASSWORD":"greatstack123",
   "scripts": {
     "build": "npm run build --prefix frontend"
+
   }
 }

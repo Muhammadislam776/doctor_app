@@ -44,10 +44,7 @@ const AddDoctor = () => {
             formData.append('degree', degree)
             formData.append('address', JSON.stringify({ line1: address1, line2: address2 }))
 
-            // console log formdata            
-            formData.forEach((value, key) => {
-                console.log(`${key}: ${value}`);
-            });
+
 
             const { data } = await axios.post(backendUrl + '/api/admin/add-doctor', formData, { headers: { aToken } })
             if (data.success) {
@@ -115,6 +112,7 @@ const AddDoctor = () => {
                                 <option value="4 Year">4 Years</option>
                                 <option value="5 Year">5 Years</option>
                                 <option value="6 Year">6 Years</option>
+                                <option value="7 Year">7 Years</option>
                                 <option value="8 Year">8 Years</option>
                                 <option value="9 Year">9 Years</option>
                                 <option value="10 Year">10 Years</option>

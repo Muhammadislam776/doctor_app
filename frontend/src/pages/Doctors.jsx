@@ -8,25 +8,46 @@ const Doctors = () => {
 
   const [filterDoc, setFilterDoc] = useState([])
   const [showFilter, setShowFilter] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   const navigate = useNavigate();
 
   const { doctors } = useContext(AppContext)
 
   const applyFilter = () => {
+    let filtered = doctors
     if (speciality) {
-      setFilterDoc(doctors.filter(doc => doc.speciality === speciality))
-    } else {
-      setFilterDoc(doctors)
+      filtered = filtered.filter(doc => doc.speciality === speciality)
     }
+    if (searchQuery) {
+      filtered = filtered.filter(doc => doc.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    }
+    setFilterDoc(filtered)
   }
 
   useEffect(() => {
     applyFilter()
-  }, [doctors, speciality])
+  }, [doctors, speciality, searchQuery])
 
   return (
     <div>
       <p className='text-gray-600'>Browse through the doctors specialist.</p>
+      
+      {/* Search Bar */}
+      <div className='mt-4 mb-2'>
+        <div className='relative max-w-md'>
+          <svg className='absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z' />
+          </svg>
+          <input
+            type='text'
+            placeholder='Search doctors by name...'
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className='w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm'
+          />
+        </div>
+      </div>
+
       <div className='flex flex-col sm:flex-row items-start gap-5 mt-5'>
         <button onClick={() => setShowFilter(!showFilter)} className={`py-1 px-3 border rounded text-sm  transition-all sm:hidden ${showFilter ? 'bg-primary text-white' : ''}`}>Filters</button>
         <div className={`flex-col gap-4 text-sm text-gray-600 ${showFilter ? 'flex' : 'hidden sm:flex'}`}>
@@ -38,7 +59,7 @@ const Doctors = () => {
           <p onClick={() => speciality === 'Gastroenterologist' ? navigate('/doctors') : navigate('/doctors/Gastroenterologist')} className={`w-[94vw] sm:w-auto pl-3 py-1.5 pr-16 border border-gray-300 rounded transition-all cursor-pointer ${speciality === 'Gastroenterologist' ? 'bg-[#E2E5FF] text-black ' : ''}`}>Gastroenterologist</p>
         </div>
         <div className='w-full grid grid-cols-auto gap-4 gap-y-6'>
-          {filterDoc.map((item, index) => (
+          {filterDoc.length > 0 ? filterDoc.map((item, index) => (
             <div onClick={() => { navigate(`/appointment/${item._id}`); scrollTo(0, 0) }} className='border border-[#C9D8FF] rounded-xl overflow-hidden cursor-pointer hover:translate-y-[-10px] transition-all duration-500' key={index}>
               <img className='bg-[#EAEFFF]' src={item.image} alt="" />
               <div className='p-4'>
@@ -49,7 +70,12 @@ const Doctors = () => {
                 <p className='text-[#5C5C5C] text-sm'>{item.speciality}</p>
               </div>
             </div>
-          ))}
+          )) : (
+            <div className='col-span-full text-center py-10 text-gray-400'>
+              <p className='text-lg'>No doctors found</p>
+              <p className='text-sm mt-1'>Try a different search or speciality</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

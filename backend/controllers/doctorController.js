@@ -55,10 +55,20 @@ const appointmentCancel = async (req, res) => {
         const appointmentData = await appointmentModel.findById(appointmentId)
         if (appointmentData && appointmentData.docId === docId) {
             await appointmentModel.findByIdAndUpdate(appointmentId, { cancelled: true })
+
+            // Release doctor slot
+            const { slotDate, slotTime } = appointmentData
+            const doctorData = await doctorModel.findById(docId)
+            let slots_booked = doctorData.slots_booked
+            if (slots_booked[slotDate]) {
+                slots_booked[slotDate] = slots_booked[slotDate].filter(e => e !== slotTime)
+                await doctorModel.findByIdAndUpdate(docId, { slots_booked })
+            }
+
             return res.json({ success: true, message: 'Appointment Cancelled' })
         }
 
-        res.json({ success: false, message: 'Appointment Cancelled' })
+        res.json({ success: false, message: 'Cancellation Failed' })
 
     } catch (error) {
         console.log(error)
@@ -79,7 +89,7 @@ const appointmentComplete = async (req, res) => {
             return res.json({ success: true, message: 'Appointment Completed' })
         }
 
-        res.json({ success: false, message: 'Appointment Cancelled' })
+        res.json({ success: false, message: 'Mark Complete Failed' })
 
     } catch (error) {
         console.log(error)
